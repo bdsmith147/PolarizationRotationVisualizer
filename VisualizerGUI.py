@@ -105,15 +105,14 @@ class App(QMainWindow):
         self.polnButtonGroup.setId(self.leftRadioButton, 1)
         
         
-        self.plot_layout = QVBoxLayout()
         alpha = np.radians(self.alphaSlider.value())
         beta = np.radians(self.betaSlider.value())
         gamma = np.radians(self.gammaSlider.value())
-        self.angles = np.array([alpha, beta, gamma])
         
+        #Lists with reference to the angles, the sliders, and the textboxes
+        self.angles = np.array([alpha, beta, gamma])
         self.lineEdits = [self.alpha_LineEdit, self.beta_LineEdit, 
                           self.gamma_LineEdit]
-        
         self.sliders = [self.alphaSlider, self.betaSlider, self.gammaSlider]
         
         
@@ -122,52 +121,44 @@ class App(QMainWindow):
         self.beta_LineEdit.setText(str(int(np.degrees(self.angles[1]))))
         self.gamma_LineEdit.setText(str(int(np.degrees(self.angles[2]))))
         
-        self.pc = PlotCanvas(self, width=5, height=4)
         
+        self.plot_layout = QVBoxLayout()
+        
+        self.pc = PlotCanvas(self, width=5, height=4)
         self.toolbar = NavigationToolbar(self.pc, self)  
+        
         self.plot_layout.addWidget(self.pc)        
         self.plot_layout.addWidget(self.toolbar)        
         self.gridLayout.addLayout(self.plot_layout, 0, 0, 0, 1)
-        
-        
-        #initialize the vector showing the direction of the light
-#        self.vec = np.array([0,0,1.5])
-#        self.init_vec = np.copy(self.vec)
-#        self.pc.update_vec(self.vec)
-        
-        #initialize the polarization "state" of the light
-#        self.state = np.array([0,1,0])
-#        self.init_state = np.copy(self.state)
-#        self.update_state()
-        self.init_poln()
+
+        self.initialize_pol()
         self.show()
     
 
-    def init_poln(self):
+    def initialize_pol(self):
         self.inp_polzn = self.checkInputPoln()
-        r = 0.15
+        r = 0.15 
         N = 25
-        if self.inp_polzn == 0:
+        if self.inp_polzn == 0: #Linear input polarization
             rot_init = np.array([0, np.pi/2, 0])
-            self.vec = np.array([1.5,0,0]) #starts the beam along the x-axis
+            self.vec = np.array([1.5,0,0]) #starts the beam along the +x-axis
             self.state = np.array([0, 1, 0])
+            
             z = np.linspace(-r, r, N)
             y = np.zeros_like(z)
             x = 0.75*np.ones_like(z)
         
-        else:
+        else: #circular input polarization
             rot_init = np.array([0, 0, 0])
             self.vec = np.array([0, 0, -1.5])
-            
-            self.theta = np.linspace(0, 2*np.pi, N)
-            x, y = r*np.cos(self.theta), r*np.sin(self.theta)
-            z = -0.75*np.ones_like(x)
-            
-            if self.inp_polzn > 0:
+            if self.inp_polzn > 0: #right-hand circular
                 self.state = np.array([0, 0, 1])
-            else:
+            else: #left-hand circular
                 self.state = np.array([1, 0, 0])
-                self.theta = np.flip(self.theta)
+            
+            theta = np.linspace(0, 2*np.pi, N)
+            x, y = r*np.cos(theta), r*np.sin(theta)
+            z = -0.75*np.ones_like(x)  
         
         self.pol_curve = np.stack((x, y, z), axis=1)
         
@@ -214,10 +205,16 @@ class App(QMainWindow):
         Changes the state of the input light polarization when a different
         radio button is selected.
         '''
-        self.init_poln()
+        self.initialize_pol()
         self.rotate()
 
     def checkInputPoln(self):
+        '''
+        Checks the input polarization state corresponding to the radio button 
+        that is checked.
+        
+        Returns: one of -1, 0, or +1.
+        '''
         polzn = self.polnButtonGroup.checkedId()
         if polzn < 0:
             polzn = int(polzn/2)
@@ -236,10 +233,13 @@ class App(QMainWindow):
         self.rotate()
         self.pc.update_plot()
     
-    def update_plot(self):
-        pass
+#    def update_plot(self):
+#        pass
         
     def update_state(self):
+        '''
+        Prints the values of the rotated state to the textboxes
+        '''
         self.negativeLineEdit.setText('{:.2f}'.format(self.state[0]))
         self.zeroLineEdit.setText('{:.2f}'.format(self.state[1]))
         self.positiveLineEdit.setText('{:.2f}'.format(self.state[2]))
@@ -249,26 +249,14 @@ class App(QMainWindow):
         pass
     
     def sliderChanged(self, ind):
-#        if ind == 0:
-#            slider = self.alphaSlider
-#            lineEdit = self.alpha_LineEdit
-#            self.angles[0] = np.radians(slider.value())
-#        elif ind == 1:
-#            slider = self.betaSlider
-#            lineEdit = self.beta_LineEdit
-#            self.angles[1] = np.radians(slider.value())
-#        elif ind == 2:
-#            slider = self.gammaSlider
-#            lineEdit = self.gamma_LineEdit
-#            self.angles[2] = np.radians(slider.value())
-            
-#        lineEdit.setText(str(slider.value()))
+        '''
+        Responds to a mouse adjustment of a slider value.
+        '''
+        val = self.sliders[ind].value() #retrieves the value of the slider
+        self.angles[ind] = np.radians(val) #sets the corresponding angle
+        self.lineEdits[ind].setText(str(val)) #updates the corresponding textbox
         
-        val = self.sliders[ind].value()
-        self.angles[ind] = np.radians(val)
-        self.lineEdits[ind].setText(str(val))
-        
-        self.rotate()
+        self.rotate() 
         self.pc.update_plot()
     
     
