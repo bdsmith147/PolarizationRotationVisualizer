@@ -74,7 +74,7 @@ z_ax = Arrow3D([0, 0], [0, 0], [0, 1.0], mutation_scale=20,
 #Udagg = np.conj(Umat).T
 
 polzn = 0
-a, b, c = 0, 45, 0 # in degrees
+a, b, c = 0, 0, 0 # in degrees
 alpha, beta, gamma = np.radians([a, b, c]) # Euler angles, in radians   
 A = EulerRot(alpha, beta, gamma)
 D = WignerD(alpha, beta, gamma)
@@ -170,7 +170,7 @@ plt.close()
 angle = np.linspace(0, 2*np.pi, 50)
 newstate = np.zeros((len(angle), 3), dtype='complex128')
 for i, ang in enumerate(angle):
-    dmat = WignerD(ang, np.radians(0), np.radians(0))
+    dmat = WignerD(np.radians(0), np.radians(0), ang)
     newstate[i] = np.round(np.dot(dmat, state), decimals=15)
 
 f, g, h = newstate.T
@@ -192,22 +192,32 @@ z = np.cos(v)
 
 
 #%%
-R = 1/np.sqrt(2) * np.array([1, -1j])
-L = 1/np.sqrt(2) * np.array([1, 1j])
-psi = np.array([elem[0]*R + elem[2]*L for elem in newstate]) # the order of L and R might be wrong
-Sz = np.linalg.norm(psi, axis=1)
-Sx = np.array([2*np.real(elem[0]*np.conj(elem[0])) for elem in psi])
-Sy = np.array([2*np.imag(elem[0]*np.conj(elem[0])) for elem in psi])
 
+#Try to represent the polarization state with stokes parameters
+#R = 1/np.sqrt(2) * np.array([1, -1j])
+#L = 1/np.sqrt(2) * np.array([1, 1j])
+#psi = np.array([elem[0]*R + elem[2]*L for elem in newstate]) # the order of L and R might be wrong
+#Sz = np.linalg.norm(psi, axis=1)
+#Sx = np.array([2*np.real(elem[0]*np.conj(elem[0])) for elem in psi])
+#Sy = np.array([2*np.imag(elem[0]*np.conj(elem[0])) for elem in psi])
+#
+#
+#fig = plt.figure()
+#ax = fig.gca(projection='3d')
+#r = [-1, 1]
+#for s, e in combinations(np.array(list(product(r, r, r))), 2):
+#    if np.sum(np.abs(s-e)) == r[1]-r[0]:
+#        ax.plot3D(*zip(s, e), 'w', lw=0)
+#
+#ax.plot_wireframe(x, y, z)
+#ax.plot(Sx, Sy, Sz, color='C1')
+#plt.show()
 
-fig = plt.figure()
-ax = fig.gca(projection='3d')
-r = [-1, 1]
-for s, e in combinations(np.array(list(product(r, r, r))), 2):
-    if np.sum(np.abs(s-e)) == r[1]-r[0]:
-        ax.plot3D(*zip(s, e), 'w', lw=0)
-
-ax.plot_wireframe(x, y, z)
-ax.plot(Sx, Sy, Sz, color='C1')
+#%%
+k = 25
+psi = newstate[k]
+rho = np.abs(np.outer(psi, np.conj(psi)))
+plt.figure()
+plt.imshow(rho)
+plt.colorbar()
 plt.show()
-
