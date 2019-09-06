@@ -96,9 +96,9 @@ class App(QMainWindow):
         self.gammaSlider.valueChanged.connect(lambda: self.sliderChanged(2))
         
         self.resetButton.clicked.connect(self.reset)
-        self.rightRadioButton.clicked.connect(self.input_poln)
-        self.linearRadioButton.clicked.connect(self.input_poln)
-        self.leftRadioButton.clicked.connect(self.input_poln)
+        self.rightRadioButton.clicked.connect(self.change_poln)
+        self.linearRadioButton.clicked.connect(self.change_poln)
+        self.leftRadioButton.clicked.connect(self.change_poln)
         
         self.polnButtonGroup.setId(self.rightRadioButton, -2)
         self.polnButtonGroup.setId(self.linearRadioButton, 0)
@@ -131,12 +131,14 @@ class App(QMainWindow):
 #        self.state = np.array([0,1,0])
 #        self.init_state = np.copy(self.state)
 #        self.update_state()
-        
-        #initialize the polarization "representation" of the light
+        self.init_poln()
+        self.show()
+    
+
+    def init_poln(self):
         self.inp_polzn = self.checkInputPoln()
-        print(self.inp_polzn)
         r = 0.15
-        N = 50
+        N = 25
         if self.inp_polzn == 0:
             rot_init = np.array([0, np.pi/2, 0])
             self.vec = np.array([1.5,0,0]) #starts the beam along the x-axis
@@ -161,7 +163,6 @@ class App(QMainWindow):
         
         self.pol_curve = np.stack((x, y, z), axis=1)
         #rotates the beam to z-axis from initial orientation
-#        self.vec = np.dot(EulerRot(*rot_init), self.vec) 
         self.init_vec = np.copy(self.vec)
         self.init_state = np.copy(self.state)
         self.init_pol_curve = np.copy(self.pol_curve)
@@ -173,8 +174,6 @@ class App(QMainWindow):
         self.init_state = np.copy(self.state)
         self.init_pol_curve = np.copy(self.pol_curve)
         
-        
-        self.show()
         
     
     def rotate(self, alpha=None, beta=None, gamma=None):
@@ -197,18 +196,17 @@ class App(QMainWindow):
         
     def rotation_op(self, mat, vectors):
         '''Generalizes the rotation operation to also run over a list of 
-        vectors'''
+        vectors. Vectors should be in a Nx3 numpy array.'''
         vectors = np.array(list(vectors))
         return np.array([np.dot(mat, v) for v in vectors])
     
-    def input_poln(self):
-        inputpol = self.checkInputPoln()
-        if inputpol == -1:
-            print('-1')
-        elif inputpol == 0:
-            print('0')
-        elif inputpol == 1:
-            print('+1')
+    def change_poln(self):
+        '''
+        Changes the state of the input light polarization when a different
+        radio button is selected.
+        '''
+        self.init_poln()
+        self.rotate()
 
     def checkInputPoln(self):
         polzn = self.polnButtonGroup.checkedId()
@@ -217,8 +215,10 @@ class App(QMainWindow):
         return polzn
     
     def set_slider(self, index):
-        '''Set the position of the slider by entering a value in the 
-        corresponding text box.'''
+        '''
+        Set the position of the slider by entering a value in the 
+        corresponding text box.
+        '''
         if index == 0:
             slider = self.alphaSlider
             lineEdit = self.alpha_LineEdit
@@ -281,13 +281,12 @@ class App(QMainWindow):
 
 class PlotCanvas(FigureCanvas):
 
-    def __init__(self, parent=None, width=5, height=7, dpi=100, vec=None, pol_curve=None):
+    def __init__(self, parent=None, width=5, height=7, dpi=100, vec=None):
         self.origin = np.array([0.,0.,0.])
-        if (vec == None and pol_curve == None):
+        if (vec == None):
             self.vec = self.origin
         else:
             self.vec = vec
-        self.pol_curve = pol_curve
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         FigureCanvas.__init__(self, self.fig)
 #        self.axes = self.fig.add_subplot(111)
@@ -325,7 +324,6 @@ class PlotCanvas(FigureCanvas):
         self.axes.scatter([0], [0], [0], color="C3", s=200, alpha=0.5)
         
         self.axes.add_artist(self.beam)
-#        points.remove()
         
         self.axes.set_xticklabels([])
         self.axes.set_yticklabels([])
@@ -343,10 +341,33 @@ class PlotCanvas(FigureCanvas):
     
     def update_poln(self, curve, inpt):
         try:
-            self.pol_curve.remove()
+            for seg in self.pol_curve:
+                seg.remove()
         except AttributeError:
             pass
-        self.pol_curve, = self.axes.plot3D(*curve.T, color='b')
+        
+
+        curve = curve.reshape(-1, 1, 3)
+        segments = np.concatenate([curve[:-1], curve[1:]], axis=1)
+        cmap = plt.get_cmap('seismic')
+        if np.abs(inpt) == 1:
+            #account for the last to first segment
+            lastseg = np.array([curve[-1], curve[0]]).reshape(1, 2, 3)
+            segments = np.append(segments, lastseg, axis=0)
+            cmap_params = np.linspace(0, 1, len(curve), endpoint=False)
+            if inpt > 0:
+                cmap_params = np.flip(cmap_params)
+        else: 
+            cmap_params = np.ones(len(curve))*0.25
+            
+        self.pol_curve = []   
+        colors = [cmap(i) for i in cmap_params]   
+        for j, seg in enumerate(segments):
+            lseg, = self.axes.plot(seg[:,0], seg[:,1], seg[:,2], 
+                                             lw=3, color=colors[j])
+            lseg.set_solid_capstyle('round')
+            self.pol_curve.append(lseg,)
+        self.update_plot()
     
     def arrow3D(self, point1, point2, color='k', lw=3):
         return Arrow3D(*zip(point1, point2), mutation_scale=20,
