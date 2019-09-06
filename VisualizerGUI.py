@@ -106,13 +106,21 @@ class App(QMainWindow):
         
         
         self.plot_layout = QVBoxLayout()
-        self.alpha = np.radians(self.alphaSlider.value())
-        self.beta = np.radians(self.betaSlider.value())
-        self.gamma = np.radians(self.gammaSlider.value())
+        alpha = np.radians(self.alphaSlider.value())
+        beta = np.radians(self.betaSlider.value())
+        gamma = np.radians(self.gammaSlider.value())
+        self.angles = np.array([alpha, beta, gamma])
         
-        self.alpha_LineEdit.setText(str(int(np.degrees(self.alpha))))
-        self.beta_LineEdit.setText(str(int(np.degrees(self.beta))))
-        self.gamma_LineEdit.setText(str(int(np.degrees(self.gamma))))
+        self.lineEdits = [self.alpha_LineEdit, self.beta_LineEdit, 
+                          self.gamma_LineEdit]
+        
+        self.sliders = [self.alphaSlider, self.betaSlider, self.gammaSlider]
+        
+        
+        
+        self.alpha_LineEdit.setText(str(int(np.degrees(self.angles[0]))))
+        self.beta_LineEdit.setText(str(int(np.degrees(self.angles[1]))))
+        self.gamma_LineEdit.setText(str(int(np.degrees(self.angles[2]))))
         
         self.pc = PlotCanvas(self, width=5, height=4)
         
@@ -162,14 +170,15 @@ class App(QMainWindow):
                 self.theta = np.flip(self.theta)
         
         self.pol_curve = np.stack((x, y, z), axis=1)
+        
         #rotates the beam to z-axis from initial orientation
         self.init_vec = np.copy(self.vec)
         self.init_state = np.copy(self.state)
         self.init_pol_curve = np.copy(self.pol_curve)
-#        print(self.pol_curve)
-#        print(self.state)
+        
         self.rotate(*rot_init)
-#        print(self.state)
+        
+        #resets the initital states
         self.init_vec = np.copy(self.vec)
         self.init_state = np.copy(self.state)
         self.init_pol_curve = np.copy(self.pol_curve)
@@ -180,7 +189,7 @@ class App(QMainWindow):
         '''Performs the rotation operations on the state and the indidence
         vector.'''
         if (alpha == None and beta == None and gamma == None):
-            alpha, beta, gamma = self.alpha, self.beta, self.gamma
+            alpha, beta, gamma = self.angles#self.alpha, self.beta, self.gamma
             
         self.R = EulerRot(alpha, beta, gamma)
         self.D = WignerD(alpha, beta, gamma)
@@ -214,33 +223,16 @@ class App(QMainWindow):
             polzn = int(polzn/2)
         return polzn
     
-    def set_slider(self, index):
+    def set_slider(self, ind):
         '''
         Set the position of the slider by entering a value in the 
         corresponding text box.
         '''
-        if index == 0:
-            slider = self.alphaSlider
-            lineEdit = self.alpha_LineEdit
-            val = np.clip(int(lineEdit.text()), -180, 180)
-            self.alpha = np.radians(val)
-            val = self.alpha
-        elif index == 1:
-            slider = self.betaSlider
-            lineEdit = self.beta_LineEdit
-            val = np.clip(int(lineEdit.text()), -180, 180)
-            self.beta = np.radians(val)
-            val = self.beta
-        elif index == 2:
-            slider = self.gammaSlider
-            lineEdit = self.gamma_LineEdit
-            val = np.clip(int(lineEdit.text()), -180, 180)
-            self.gamma = np.radians(val)
-            val = self.gamma
+        val = np.clip(int(self.lineEdits[ind].text()), -180, 180)
+        self.angles[ind] = np.radians(val)
+        self.sliders[ind].setValue(val)
+        self.lineEdits[ind].setText(str(val))
         
-        val = int(np.degrees(val))
-        slider.setValue(val)
-        lineEdit.setText(str(val))
         self.rotate()
         self.pc.update_plot()
     
@@ -256,21 +248,25 @@ class App(QMainWindow):
         print('Resetting...')
         pass
     
-    def sliderChanged(self, index):
-        if index == 0:
-            slider = self.alphaSlider
-            lineEdit = self.alpha_LineEdit
-            self.alpha = np.radians(slider.value())
-        elif index == 1:
-            slider = self.betaSlider
-            lineEdit = self.beta_LineEdit
-            self.beta = np.radians(slider.value())
-        elif index == 2:
-            slider = self.gammaSlider
-            lineEdit = self.gamma_LineEdit
-            self.gamma = np.radians(slider.value())
+    def sliderChanged(self, ind):
+#        if ind == 0:
+#            slider = self.alphaSlider
+#            lineEdit = self.alpha_LineEdit
+#            self.angles[0] = np.radians(slider.value())
+#        elif ind == 1:
+#            slider = self.betaSlider
+#            lineEdit = self.beta_LineEdit
+#            self.angles[1] = np.radians(slider.value())
+#        elif ind == 2:
+#            slider = self.gammaSlider
+#            lineEdit = self.gamma_LineEdit
+#            self.angles[2] = np.radians(slider.value())
             
-        lineEdit.setText(str(slider.value()))
+#        lineEdit.setText(str(slider.value()))
+        
+        val = self.sliders[ind].value()
+        self.angles[ind] = np.radians(val)
+        self.lineEdits[ind].setText(str(val))
         
         self.rotate()
         self.pc.update_plot()

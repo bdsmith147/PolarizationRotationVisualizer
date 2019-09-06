@@ -55,6 +55,9 @@
         <layout class="QGridLayout" name="EulerAngles">
          <item row="1" column="0">
           <widget class="QLabel" name="beta_label">
+           <property name="toolTip">
+            <string>&quot;Pitch&quot;</string>
+           </property>
            <property name="text">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;&amp;nbsp; &amp;beta; &amp;nbsp; &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
@@ -138,6 +141,9 @@
          </item>
          <item row="2" column="0">
           <widget class="QLabel" name="gamma_label">
+           <property name="toolTip">
+            <string>&quot;Roll&quot;</string>
+           </property>
            <property name="text">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;&amp;nbsp; γ &amp;nbsp; &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
@@ -145,6 +151,9 @@
          </item>
          <item row="0" column="0">
           <widget class="QLabel" name="alpha_label">
+           <property name="toolTip">
+            <string>&quot;Yaw&quot;</string>
+           </property>
            <property name="text">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;&amp;nbsp; &amp;alpha; &amp;nbsp; &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
