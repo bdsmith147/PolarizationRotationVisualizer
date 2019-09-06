@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import (FigureCanvasQTAgg as FigureCanvas,
     NavigationToolbar2QT as NavigationToolbar)
 import matplotlib.cbook
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 warnings.filterwarnings("ignore",category=matplotlib.cbook.mplDeprecation)
 
 from mpl_toolkits.mplot3d import axes3d, proj3d
@@ -122,14 +123,23 @@ class App(QMainWindow):
         self.gamma_LineEdit.setText(str(int(np.degrees(self.angles[2]))))
         
         
-        self.plot_layout = QVBoxLayout()
+        self.plot_layout3d = QVBoxLayout()
         
-        self.pc = PlotCanvas(self, width=5, height=4)
-        self.toolbar = NavigationToolbar(self.pc, self)  
+        self.pc = PlotCanvas3D(self, width=5, height=4)
+        self.toolbar3d = NavigationToolbar(self.pc, self)  
         
-        self.plot_layout.addWidget(self.pc)        
-        self.plot_layout.addWidget(self.toolbar)        
-        self.gridLayout.addLayout(self.plot_layout, 0, 0, 0, 1)
+        self.plot_layout3d.addWidget(self.pc)        
+        self.plot_layout3d.addWidget(self.toolbar3d)        
+        self.gridLayout.addLayout(self.plot_layout3d, 0, 0, 0, 1)
+        
+        
+        self.plot_layout2d = QVBoxLayout()
+        self.dens_plot = PlotCanvas2D(self, width=3, height=3)
+        self.toolbar2d = NavigationToolbar(self.dens_plot, self)
+        
+        self.plot_layout2d.addWidget(self.dens_plot)        
+        self.plot_layout2d.addWidget(self.toolbar2d)        
+        self.gridLayout_2.addWidget(self.dens_plot, 0, 0, 3, 1)
 
         self.initialize_pol()
         self.show()
@@ -193,6 +203,8 @@ class App(QMainWindow):
         self.pc.update_vec(self.vec)
         self.pc.update_poln(self.pol_curve, self.inp_polzn)
         self.update_state()
+        rho = np.abs(np.outer(self.state, np.conj(self.state)))
+        self.dens_plot.update_figure(rho)
         
     def rotation_op(self, mat, vectors):
         '''Generalizes the rotation operation to also run over a list of 
@@ -263,7 +275,7 @@ class App(QMainWindow):
         
 
 
-class PlotCanvas(FigureCanvas):
+class PlotCanvas3D(FigureCanvas):
 
     def __init__(self, parent=None, width=5, height=7, dpi=100, vec=None):
         self.origin = np.array([0.,0.,0.])
@@ -279,8 +291,8 @@ class PlotCanvas(FigureCanvas):
         self.setParent(parent)
 
         FigureCanvas.setSizePolicy(self,
-                QSizePolicy.Expanding,
-                QSizePolicy.Expanding)
+                QSizePolicy.Maximum,
+                QSizePolicy.Maximum)
         FigureCanvas.updateGeometry(self)
         self.x_ax = self.arrow3D(self.origin, np.array([0.75, 0., 0.]))
         self.y_ax = self.arrow3D(self.origin, np.array([0., 0.75, 0.]))
@@ -356,6 +368,40 @@ class PlotCanvas(FigureCanvas):
     def arrow3D(self, point1, point2, color='k', lw=3):
         return Arrow3D(*zip(point1, point2), mutation_scale=20,
                             lw=lw, arrowstyle="-|>", color=color)
+
+class PlotCanvas2D(FigureCanvas):
+
+    def __init__(self, parent=None, width=5, height=7, dpi=100):
+        self.fig = Figure(figsize=(width, height), dpi=dpi)
+        FigureCanvas.__init__(self, self.fig)
+        self.axes = self.fig.add_subplot(111)
+        self.axes.set_aspect('equal')
+        self.setParent(parent)
+
+        FigureCanvas.setSizePolicy(self,
+                QSizePolicy.Expanding,
+                QSizePolicy.Expanding)
+        FigureCanvas.updateGeometry(self)
+        
+        self.divider = make_axes_locatable(self.axes)
+        self.cax = self.divider.append_axes('right', size='5%', pad=0.05)
+        data = np.zeros((3,3))
+        self.im = self.axes.imshow(data, cmap='viridis', vmin=0, vmax=1)
+        
+        self.fig.colorbar(self.im, cax=self.cax, orientation='vertical')
+#        self.axes.grid()
+        self.draw()
+#        self.init_plot()
+        
+    def init_plot(self):
+        self.draw()
+        
+    def update_figure(self, mat):
+        self.im.set_data(mat)
+        self.draw()
+        
+    
+
 
 if __name__ == '__main__':
     def run_app():
