@@ -139,7 +139,7 @@ class App(QMainWindow):
         
         self.plot_layout2d.addWidget(self.dens_plot)        
         self.plot_layout2d.addWidget(self.toolbar2d)        
-        self.gridLayout_2.addWidget(self.dens_plot, 0, 0, 3, 1)
+        self.gridLayout_5.addLayout(self.plot_layout2d, 0, 0, 0, 1)
 
         self.initialize_pol()
         self.show()
@@ -212,6 +212,19 @@ class App(QMainWindow):
         vectors = np.array(list(vectors))
         return np.array([np.dot(mat, v) for v in vectors])
     
+    def reset(self):
+        '''
+        Resets the slider angles back to zero.
+        '''
+        self.angles = np.array([0, 0, 0])
+        self.initialize_pol()
+        self.rotate()
+        for ind in range(3):
+            self.sliders[ind].setValue(0)
+            self.lineEdits[ind].setText(str(0))
+        pass
+
+
     def change_poln(self):
         '''
         Changes the state of the input light polarization when a different
@@ -256,9 +269,7 @@ class App(QMainWindow):
         self.zeroLineEdit.setText('{:.2f}'.format(self.state[1]))
         self.positiveLineEdit.setText('{:.2f}'.format(self.state[2]))
     
-    def reset(self):
-        print('Resetting...')
-        pass
+
     
     def sliderChanged(self, ind):
         '''
@@ -285,9 +296,7 @@ class PlotCanvas3D(FigureCanvas):
             self.vec = vec
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         FigureCanvas.__init__(self, self.fig)
-#        self.axes = self.fig.add_subplot(111)
         self.axes = self.fig.gca(projection='3d')
-#        self.axes.set_aspect('equal')
         self.setParent(parent)
 
         FigureCanvas.setSizePolicy(self,
@@ -371,7 +380,7 @@ class PlotCanvas3D(FigureCanvas):
 
 class PlotCanvas2D(FigureCanvas):
 
-    def __init__(self, parent=None, width=5, height=7, dpi=100):
+    def __init__(self, parent=None, width=5, height=5, dpi=100):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         FigureCanvas.__init__(self, self.fig)
         self.axes = self.fig.add_subplot(111)
@@ -386,10 +395,20 @@ class PlotCanvas2D(FigureCanvas):
         self.divider = make_axes_locatable(self.axes)
         self.cax = self.divider.append_axes('right', size='5%', pad=0.05)
         data = np.zeros((3,3))
-        self.im = self.axes.imshow(data, cmap='viridis', vmin=0, vmax=1)
+        self.im = self.axes.imshow(data, cmap='viridis', vmin=0, vmax=1, origin='lower')
         
         self.fig.colorbar(self.im, cax=self.cax, orientation='vertical')
-#        self.axes.grid()
+        self.axes.xaxis.set_major_locator(plt.MultipleLocator(1))
+        self.axes.xaxis.set_minor_locator(plt.MultipleLocator(0.5))
+        self.axes.yaxis.set_major_locator(plt.MultipleLocator(1))
+        self.axes.yaxis.set_minor_locator(plt.MultipleLocator(0.5))
+#        self.axes.set_xticks([-0.5, 0.5, 1.5, 2.5])
+#        self.axes.set_yticks([-0.5, 0.5, 1.5, 2.5])
+        self.axes.set_xticklabels(['', '-1', '0', '+1'])
+        self.axes.set_yticklabels(['', '-1', '0', '+1'])
+        self.axes.set_title('Density Matrix Magnitudes', fontsize=8)
+        self.axes.grid(b=True, which='minor', linestyle='-')
+        plt.tight_layout()
         self.draw()
 #        self.init_plot()
         
