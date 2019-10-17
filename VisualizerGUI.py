@@ -216,13 +216,12 @@ class App(QMainWindow):
         '''
         Resets the slider angles back to zero.
         '''
-        self.angles = np.array([0, 0, 0])
+#        self.angles = np.array([0, 0, 0]) #this line messes up the "reset" afterwards
         self.initialize_pol()
         self.rotate()
         for ind in range(3):
             self.sliders[ind].setValue(0)
             self.lineEdits[ind].setText(str(0))
-        pass
 
 
     def change_poln(self):
@@ -258,8 +257,6 @@ class App(QMainWindow):
         self.rotate()
         self.pc.update_plot()
     
-#    def update_plot(self):
-#        pass
         
     def update_state(self):
         '''
